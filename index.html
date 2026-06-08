@@ -90,6 +90,21 @@
     cursor: pointer; letter-spacing: 0.5px; margin-top: 4px;
   }
   .btn-start:active { opacity: 0.88; transform: scale(0.98); }
+  .checkbox-wrap { margin-bottom: 10px; text-align: left; }
+  .checkbox-label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .checkbox-label input[type="checkbox"] { display: none; }
+  .checkmark {
+    min-width: 20px; height: 20px; border-radius: 5px;
+    border: 1.5px solid var(--border); background: var(--card2);
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 2px; transition: all 0.15s; flex-shrink: 0;
+  }
+  .checkbox-label input:checked + .checkmark { background: var(--blue); border-color: var(--blue); }
+  .checkbox-label input:checked + .checkmark::after { content: '✓'; color: #fff; font-size: 13px; font-weight: 800; }
+  .chk-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .chk-text strong { color: var(--text); }
+  .required { color: var(--wrong); font-weight: 800; }
+  .chk-error { color: var(--wrong); font-size: 11px; font-weight: 700; margin: 4px 0 0 30px; display: none; }
   .privacy { font-size: 11.5px; color: var(--muted); margin-top: 14px; line-height: 1.7; }
   .privacy strong { color: var(--text); }
 
@@ -300,10 +315,22 @@
       <div class="email-label">Το email σου</div>
       <input class="email-input" type="email" id="emailInput" placeholder="name@example.com" />
       <div class="email-error" id="emailError">Παρακαλώ εισάγετε έγκυρο email.</div>
+      <div class="checkbox-wrap">
+        <label class="checkbox-label">
+          <input type="checkbox" id="chkTerms">
+          <span class="checkmark"></span>
+          <span class="chk-text">Συμφωνώ με τη συμμετοχή μου στην κλήρωση και την αποθήκευση του email μου από την <strong>SKG.EDUCATION</strong>. <span class="required">*</span></span>
+        </label>
+        <div class="chk-error" id="chkTermsError">Απαιτείται αποδοχή για συμμετοχή.</div>
+      </div>
+      <div class="checkbox-wrap" style="margin-bottom:16px;">
+        <label class="checkbox-label">
+          <input type="checkbox" id="chkMarketing">
+          <span class="checkmark"></span>
+          <span class="chk-text">Συμφωνώ να λαμβάνω ενημερώσεις και προσφορές από την <strong>SKG.EDUCATION</strong>. <span style="color:var(--muted);font-size:11px;">(προαιρετικό)</span></span>
+        </label>
+      </div>
       <button class="btn-start" onclick="startQuiz()">Ξεκινάμε! →</button>
-      <p class="privacy">
-        Το email σου θα παραμείνει στη βάση δεδομένων της <strong>SKG.EDUCATION</strong> και θα ενημερώνεσαι για εκπαιδευτικές ενημερώσεις και προσφορές. Χρησιμοποιείται επίσης για την κλήρωση υποτροφιών.
-      </p>
     </div>
   </div>
 
@@ -363,8 +390,8 @@ let registrations = JSON.parse(localStorage.getItem('skg_quiz_regs') || '[]');
 
 function exportCSV() {
   if (!registrations.length) { alert('Δεν υπάρχουν συμμετοχές ακόμα.'); return; }
-  let csv = 'Email,Συνολικό Σκορ,AI/Claude,Coding,Ημερομηνία\n';
-  registrations.forEach(r => { csv += `${r.email},${r.score}/10,${r.ai}/5,${r.coding}/5,${r.date}\n`; });
+  let csv = 'Email,Συνολικό Σκορ,AI/Claude,Coding,Marketing,Ημερομηνία\n';
+  registrations.forEach(r => { csv += `${r.email},${r.score}/10,${r.ai}/5,${r.coding}/5,${r.marketing || 'ΟΧΙ'},${r.date}\n`; });
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -373,7 +400,7 @@ function exportCSV() {
 }
 
 function saveReg(email, score, aiSc, codeSc) {
-  registrations.push({ email, score, ai: aiSc, coding: codeSc, total: 10, date: new Date().toLocaleString('el-GR') });
+  registrations.push({ email, score, ai: aiSc, coding: codeSc, total: 10, marketing: userMarketing ? 'ΝΑΙ' : 'ΟΧΙ', date: new Date().toLocaleString('el-GR') });
   localStorage.setItem('skg_quiz_regs', JSON.stringify(registrations));
 }
 
@@ -463,17 +490,34 @@ const questions = [
 
 let currentQ = 0, score = 0, aiScore = 0, codeScore = 0;
 let answered = false, timerInterval = null, timeLeft = 60;
-let userEmail = '';
+let userEmail = '', userMarketing = false;
 
 function startQuiz() {
   const email = document.getElementById('emailInput').value.trim();
   const err = document.getElementById('emailError');
+  const chkTerms = document.getElementById('chkTerms');
+  const chkTermsError = document.getElementById('chkTermsError');
+
+  let valid = true;
+
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     document.getElementById('emailInput').style.borderColor = 'var(--wrong)';
-    err.style.display = 'block'; return;
+    err.style.display = 'block'; valid = false;
+  } else {
+    document.getElementById('emailInput').style.borderColor = '';
+    err.style.display = 'none';
   }
-  err.style.display = 'none';
+
+  if (!chkTerms.checked) {
+    chkTermsError.style.display = 'block'; valid = false;
+  } else {
+    chkTermsError.style.display = 'none';
+  }
+
+  if (!valid) return;
+
   userEmail = email;
+  userMarketing = document.getElementById('chkMarketing').checked;
   currentQ = 0; score = 0; aiScore = 0; codeScore = 0;
   showScreen('screen-quiz');
   document.getElementById('qTotal').textContent = questions.length;
@@ -663,6 +707,8 @@ function showResults() {
 function restartQuiz() {
   document.getElementById('emailInput').value = '';
   document.getElementById('emailInput').style.borderColor = '';
+  document.getElementById('chkTerms').checked = false;
+  document.getElementById('chkMarketing').checked = false;
   showScreen('screen-email');
 }
 </script>
