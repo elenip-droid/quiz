@@ -245,4 +245,424 @@
     background: linear-gradient(135deg, #fff 40%, var(--blue));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px;
   }
-  .results-sub { color: var(--muted); font-si...
+  .results-sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 24px; }
+  .score-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .breakdown-box { border-radius: 12px; padding: 14px; font-size: 13px; font-weight: 700; }
+  .breakdown-box.ai-box   { background: rgba(30,143,255,0.08); border: 1px solid rgba(30,143,255,0.2); color: var(--blue); }
+  .breakdown-box.code-box { background: rgba(34,201,122,0.08); border: 1px solid rgba(34,201,122,0.2); color: var(--correct); }
+  .breakdown-box .b-num   { font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; color: #fff; display: block; margin-bottom: 2px; }
+  .results-highlight {
+    background: rgba(30,143,255,0.08); border: 1px solid rgba(30,143,255,0.2);
+    border-radius: 14px; padding: 18px 22px;
+    font-size: 14px; color: var(--blue); font-weight: 700; line-height: 1.7; margin-bottom: 20px;
+  }
+  .results-highlight span { color: #fff; }
+  .btn-restart {
+    width: 100%; background: transparent; border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 14px; color: var(--muted);
+    font-size: 14px; font-weight: 700; font-family: 'Nunito', sans-serif; cursor: pointer;
+  }
+
+  /* ADMIN */
+  .admin-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(10,13,20,0.97); border-top: 1px solid rgba(30,143,255,0.15);
+    padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; color: var(--muted); z-index: 100;
+  }
+  .admin-count { font-weight: 700; }
+  .admin-count span { color: var(--blue); }
+  .btn-export {
+    background: rgba(30,143,255,0.12); border: 1px solid rgba(30,143,255,0.25);
+    border-radius: 8px; padding: 6px 14px; color: var(--blue);
+    font-size: 12px; font-weight: 700; font-family: 'Nunito', sans-serif; cursor: pointer;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo-bar">
+    <div class="logo-text">⚙️ <span>SKG.EDUCATION</span></div>
+  </div>
+
+  <!-- EMAIL SCREEN -->
+  <div class="screen active" id="screen-email">
+    <div class="welcome-card">
+      <div class="welcome-badge">🤖 AI & Coding Quiz</div>
+      <div class="welcome-title">Δοκίμασε τις γνώσεις σου!</div>
+      <p class="welcome-sub">10 ερωτήσεις για AI, Claude και Coding. Κάθε ερώτηση έχει χρονόμετρο 1 λεπτού!</p>
+      <div class="prize-box">🏆 Κλήρωση για <span>3 υποτροφίες</span> στο Web Development Bootcamp της <span>SKG.EDUCATION</span></div>
+      <div class="section-divider"><hr><span>Συμμετοχή</span><hr></div>
+      <div class="email-label">Το email σου</div>
+      <input class="email-input" type="email" id="emailInput" placeholder="name@example.com" />
+      <div class="email-error" id="emailError">Παρακαλώ εισάγετε έγκυρο email.</div>
+      <button class="btn-start" onclick="startQuiz()">Ξεκινάμε! →</button>
+      <p class="privacy">
+        Το email σου θα παραμείνει στη βάση δεδομένων της <strong>SKG.EDUCATION</strong> και θα ενημερώνεσαι για εκπαιδευτικές ενημερώσεις και προσφορές. Χρησιμοποιείται επίσης για την κλήρωση υποτροφιών.
+      </p>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="screen" id="screen-quiz">
+    <div class="quiz-header">
+      <div class="q-counter">Ερώτηση <span id="qNum">1</span> / <span id="qTotal">10</span></div>
+      <div class="timer-wrap" id="timerWrap">⏱ <span id="timerVal">60</span>s</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="q-card">
+      <div id="qCatTag"></div>
+      <div class="q-type-badge" id="qBadge"></div>
+      <div class="q-text" id="qText"></div>
+      <div id="qOptions"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+    <button class="btn-next" id="btnNext" onclick="nextQuestion()">Επόμενη ερώτηση →</button>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div class="screen" id="screen-results">
+    <div class="results-card">
+      <div class="score-ring" id="scoreRing">
+        <div class="score-num" id="scoreNum">0/10</div>
+      </div>
+      <div class="results-title" id="resultsTitle">Συγχαρητήρια!</div>
+      <p class="results-sub" id="resultsSub"></p>
+      <div class="score-breakdown">
+        <div class="breakdown-box ai-box">
+          <span class="b-num" id="aiScore">0/5</span>
+          🤖 AI & Claude
+        </div>
+        <div class="breakdown-box code-box">
+          <span class="b-num" id="codeScore">0/5</span>
+          💻 Coding
+        </div>
+      </div>
+      <div class="results-highlight">
+        🎯 Συμμετέχεις στην κλήρωση για <span>3 υποτροφίες Web Development Bootcamp</span>!<br>
+        Αποτέλεσμα την ερχόμενη <span>Δευτέρα στο email σου</span>.
+      </div>
+      <button class="btn-restart" onclick="restartQuiz()">🔄 Νέος παίκτης</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN BAR - αόρατη για χρήστες -->
+<div class="admin-bar">
+  <button class="btn-export" onclick="exportCSV()">📥 Export CSV</button>
+</div>
+
+<script>
+let registrations = JSON.parse(localStorage.getItem('skg_quiz_regs') || '[]');
+
+function exportCSV() {
+  if (!registrations.length) { alert('Δεν υπάρχουν συμμετοχές ακόμα.'); return; }
+  let csv = 'Email,Συνολικό Σκορ,AI/Claude,Coding,Ημερομηνία\n';
+  registrations.forEach(r => { csv += `${r.email},${r.score}/10,${r.ai}/5,${r.coding}/5,${r.date}\n`; });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `skg_quiz_${new Date().toLocaleDateString('el-GR').replace(/\//g,'-')}.csv`;
+  a.click();
+}
+
+function saveReg(email, score, aiSc, codeSc) {
+  registrations.push({ email, score, ai: aiSc, coding: codeSc, total: 10, date: new Date().toLocaleString('el-GR') });
+  localStorage.setItem('skg_quiz_regs', JSON.stringify(registrations));
+}
+
+const questions = [
+  {
+    cat: 'ai', type: 'mc',
+    badge: '🔢 Multiple Choice',
+    text: 'Ποια εταιρεία δημιούργησε τον Claude;',
+    options: ['OpenAI', 'Google DeepMind', 'Anthropic', 'Meta AI'],
+    correct: 2
+  },
+  {
+    cat: 'ai', type: 'logo',
+    badge: '🖼️ Αναγνώριση Logo',
+    text: 'Ποιο από αυτά είναι το επίσημο λογότυπο του Claude AI;',
+    logos: [
+      { emoji: '🌊', label: 'A' },
+      { emoji: '◆', label: 'B' },
+      { emoji: '✳️', label: 'C' },
+      { emoji: '🌀', label: 'D' }
+    ],
+    correct: 2,
+    explanation: 'Το σωστό ήταν C ✳️ — το halo logo της Anthropic/Claude.'
+  },
+  {
+    cat: 'ai', type: 'tf',
+    badge: '✅ Σωστό / Λάθος',
+    text: 'Ο Claude μπορεί να επεξεργαστεί και να "δει" εικόνες.',
+    correct: true,
+    explanation: 'Σωστό! Ο Claude έχει multimodal δυνατότητες και αναλύει εικόνες.'
+  },
+  {
+    cat: 'ai', type: 'tf',
+    badge: '✅ Σωστό / Λάθος',
+    text: 'Το ChatGPT και ο Claude ανήκουν στην ίδια εταιρεία.',
+    correct: false,
+    explanation: 'Λάθος! ChatGPT → OpenAI, Claude → Anthropic. Δύο διαφορετικές εταιρείες!'
+  },
+  {
+    cat: 'ai', type: 'match',
+    badge: '🔗 Αντιστοίχηση',
+    text: 'Αντιστοίχισε κάθε AI model με την εταιρεία που το δημιούργησε:',
+    pairs: [
+      { left: 'Claude',  options: ['Anthropic','OpenAI','Google'], correct: 'Anthropic' },
+      { left: 'ChatGPT', options: ['Anthropic','OpenAI','Google'], correct: 'OpenAI' },
+      { left: 'Gemini',  options: ['Anthropic','OpenAI','Google'], correct: 'Google' }
+    ]
+  },
+  {
+    cat: 'code', type: 'tf',
+    badge: '✅ Σωστό / Λάθος',
+    text: 'Ένα website μπορεί να λειτουργήσει χωρίς server.',
+    correct: true,
+    explanation: 'Σωστό! Τα static websites (HTML/CSS/JS) τρέχουν απευθείας στον browser χωρίς server.'
+  },
+  {
+    cat: 'code', type: 'mc',
+    badge: '🔢 Multiple Choice',
+    text: 'Ποια από τις παρακάτω ΔΕΝ είναι γλώσσα προγραμματισμού;',
+    options: ['Python', 'Java', 'HTML', 'JavaScript'],
+    correct: 2,
+    explanation: 'Το HTML είναι HyperText Markup Language — δομεί περιεχόμενο, δεν προγραμματίζει λογική!'
+  },
+  {
+    cat: 'code', type: 'mc',
+    badge: '🔢 Multiple Choice',
+    text: 'Τι είναι ένα "bug" στον προγραμματισμό;',
+    options: ['Ένα χαρακτηριστικό του κώδικα', 'Ένα σφάλμα στον κώδικα', 'Ένα εργαλείο debugging', 'Ένας τύπος database'],
+    correct: 1,
+    explanation: 'Bug = σφάλμα στον κώδικα. Το πρώτο καταγεγραμμένο bug ήταν κυριολεκτικά ένα έντομο (1947)! 🦟'
+  },
+  {
+    cat: 'code', type: 'tf',
+    badge: '✅ Σωστό / Λάθος',
+    text: 'Το Git χρησιμοποιείται για version control — για να παρακολουθείς αλλαγές στον κώδικά σου.',
+    correct: true,
+    explanation: 'Σωστό! Το Git είναι το πιο δημοφιλές version control system στον κόσμο.'
+  },
+  {
+    cat: 'code', type: 'tf',
+    badge: '✅ Σωστό / Λάθος',
+    text: 'Ένας developer μπορεί να γράψει κώδικα μόνο σε μία γλώσσα προγραμματισμού.',
+    correct: false,
+    explanation: 'Λάθος! Οι developers συνήθως γνωρίζουν πολλές γλώσσες — Python, JavaScript, Java κ.ά.'
+  }
+];
+
+let currentQ = 0, score = 0, aiScore = 0, codeScore = 0;
+let answered = false, timerInterval = null, timeLeft = 60;
+let userEmail = '';
+
+function startQuiz() {
+  const email = document.getElementById('emailInput').value.trim();
+  const err = document.getElementById('emailError');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    document.getElementById('emailInput').style.borderColor = 'var(--wrong)';
+    err.style.display = 'block'; return;
+  }
+  err.style.display = 'none';
+  userEmail = email;
+  currentQ = 0; score = 0; aiScore = 0; codeScore = 0;
+  showScreen('screen-quiz');
+  document.getElementById('qTotal').textContent = questions.length;
+  loadQuestion();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function loadQuestion() {
+  answered = false;
+  const q = questions[currentQ];
+  document.getElementById('qNum').textContent = currentQ + 1;
+  document.getElementById('progressFill').style.width = ((currentQ / questions.length) * 100) + '%';
+  const catTag = document.getElementById('qCatTag');
+  catTag.className = `cat-tag ${q.cat}`;
+  catTag.textContent = q.cat === 'ai' ? '🤖 AI & Claude' : '💻 Coding';
+  document.getElementById('qBadge').textContent = q.badge;
+  document.getElementById('qText').textContent = q.text;
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').innerHTML = '';
+  document.getElementById('btnNext').classList.remove('show');
+
+  const optDiv = document.getElementById('qOptions');
+  optDiv.innerHTML = '';
+
+  if (q.type === 'mc') {
+    const grid = document.createElement('div');
+    grid.className = 'options-grid';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.innerHTML = `<span class="opt-label">${['Α','Β','Γ','Δ'][i]}</span>${opt}`;
+      btn.onclick = () => answerMC(i, q, btn, grid);
+      grid.appendChild(btn);
+    });
+    optDiv.appendChild(grid);
+  } else if (q.type === 'logo') {
+    const grid = document.createElement('div');
+    grid.className = 'logo-grid';
+    q.logos.forEach((logo, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'logo-cell';
+      cell.innerHTML = `<span>${logo.emoji}</span><span class="cell-label">${logo.label}</span>`;
+      cell.onclick = () => answerLogo(i, q, cell, grid);
+      grid.appendChild(cell);
+    });
+    optDiv.appendChild(grid);
+  } else if (q.type === 'tf') {
+    const grid = document.createElement('div');
+    grid.className = 'tf-grid';
+    [true, false].forEach((val, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'tf-btn';
+      btn.innerHTML = `<span class="tf-icon">${i===0?'✅':'❌'}</span>${i===0?'Σωστό':'Λάθος'}`;
+      btn.onclick = () => answerTF(val, q, btn, grid);
+      grid.appendChild(btn);
+    });
+    optDiv.appendChild(grid);
+  } else if (q.type === 'match') {
+    const wrap = document.createElement('div');
+    wrap.className = 'match-container';
+    q.pairs.forEach((pair, i) => {
+      const row = document.createElement('div');
+      row.className = 'match-row';
+      const left = document.createElement('div');
+      left.className = 'match-left';
+      left.textContent = pair.left;
+      const arrow = document.createElement('span');
+      arrow.className = 'match-arrow';
+      arrow.textContent = '→';
+      const sel = document.createElement('select');
+      sel.className = 'match-select';
+      sel.id = `ms${i}`;
+      sel.innerHTML = `<option value="">επιλέξτε...</option>` + pair.options.map(o=>`<option value="${o}">${o}</option>`).join('');
+      row.appendChild(left); row.appendChild(arrow); row.appendChild(sel);
+      wrap.appendChild(row);
+    });
+    const btn = document.createElement('button');
+    btn.className = 'btn-check';
+    btn.textContent = 'Έλεγχος →';
+    btn.onclick = () => checkMatch(q, btn);
+    wrap.appendChild(btn);
+    optDiv.appendChild(wrap);
+  }
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = 60;
+  const tw = document.getElementById('timerWrap');
+  const tv = document.getElementById('timerVal');
+  tw.classList.remove('urgent');
+  tv.textContent = timeLeft;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    tv.textContent = timeLeft;
+    if (timeLeft <= 10) tw.classList.add('urgent');
+    if (timeLeft <= 0) { clearInterval(timerInterval); if (!answered) timeUp(); }
+  }, 1000);
+}
+
+function timeUp() {
+  answered = true;
+  showFeedback(false, '⏰ Ο χρόνος τελείωσε!');
+  document.querySelectorAll('.opt-btn,.tf-btn,.logo-cell,.match-select,.btn-check').forEach(el => { el.disabled = true; el.classList.add('disabled'); });
+  document.getElementById('btnNext').classList.add('show');
+}
+
+function addScore(q) { score++; if (q.cat === 'ai') aiScore++; else codeScore++; }
+
+function answerMC(i, q, btn, grid) {
+  if (answered) return;
+  answered = true; clearInterval(timerInterval);
+  grid.querySelectorAll('.opt-btn').forEach((b, idx) => { b.disabled = true; if (idx === q.correct) b.classList.add('correct'); });
+  if (i === q.correct) { addScore(q); showFeedback(true, '✅ Σωστό!' + (q.explanation ? ' ' + q.explanation : '')); }
+  else { btn.classList.add('wrong'); showFeedback(false, '❌ Λάθος!' + (q.explanation ? ' ' + q.explanation : '')); }
+  document.getElementById('btnNext').classList.add('show');
+}
+
+function answerLogo(i, q, cell, grid) {
+  if (answered) return;
+  answered = true; clearInterval(timerInterval);
+  grid.querySelectorAll('.logo-cell').forEach((c, idx) => { c.classList.add('disabled'); if (idx === q.correct) c.classList.add('correct'); });
+  if (i === q.correct) { addScore(q); showFeedback(true, '✅ Σωστό! Το λογότυπο του Claude είναι το ✳️'); }
+  else { cell.classList.add('wrong'); showFeedback(false, '❌ Λάθος! ' + (q.explanation || 'Το σωστό ήταν C ✳️')); }
+  document.getElementById('btnNext').classList.add('show');
+}
+
+function answerTF(val, q, btn, grid) {
+  if (answered) return;
+  answered = true; clearInterval(timerInterval);
+  grid.querySelectorAll('.tf-btn').forEach((b, i) => { b.disabled = true; if ((i === 0) === q.correct) b.classList.add('correct'); });
+  if (val === q.correct) { addScore(q); showFeedback(true, '✅ Σωστό!' + (q.explanation ? ' ' + q.explanation : '')); }
+  else { btn.classList.add('wrong'); showFeedback(false, '❌ Λάθος!' + (q.explanation ? ' ' + q.explanation : '')); }
+  document.getElementById('btnNext').classList.add('show');
+}
+
+function checkMatch(q, checkBtn) {
+  if (answered) return;
+  answered = true; clearInterval(timerInterval);
+  let allOk = true;
+  q.pairs.forEach((pair, i) => {
+    const sel = document.getElementById(`ms${i}`);
+    sel.disabled = true;
+    if (sel.value === pair.correct) sel.classList.add('correct');
+    else { sel.classList.add('wrong'); allOk = false; }
+  });
+  checkBtn.disabled = true;
+  if (allOk) { addScore(q); showFeedback(true, '✅ Τέλεια αντιστοίχηση!'); }
+  else showFeedback(false, '❌ Κάποιες αντιστοιχίσεις δεν ήταν σωστές. Claude→Anthropic, ChatGPT→OpenAI, Gemini→Google');
+  document.getElementById('btnNext').classList.add('show');
+}
+
+function showFeedback(ok, msg) {
+  const fb = document.getElementById('feedback');
+  fb.textContent = msg;
+  fb.className = `feedback show ${ok ? 'correct-fb' : 'wrong-fb'}`;
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) showResults();
+  else loadQuestion();
+}
+
+function showResults() {
+  clearInterval(timerInterval);
+  saveReg(userEmail, score, aiScore, codeScore);
+  showScreen('screen-results');
+  const pct = Math.round((score / questions.length) * 100);
+  document.getElementById('scoreRing').style.setProperty('--pct', `${pct}%`);
+  document.getElementById('scoreNum').textContent = `${score}/10`;
+  document.getElementById('aiScore').textContent = `${aiScore}/5`;
+  document.getElementById('codeScore').textContent = `${codeScore}/5`;
+  const [t,s] = score >= 9 ? ['🏆 Απόλυτο!','Τέλειο σκορ! Είσαι ειδικός!'] :
+                score >= 7 ? ['🎯 Εξαιρετικά!','Εξαιρετική επίδοση!'] :
+                score >= 5 ? ['👍 Καλά!','Καλή προσπάθεια! Υπάρχει χώρος για βελτίωση.'] :
+                             ['💪 Συνέχισε!','Δύσκολο quiz! Μην τα παρατάς!'];
+  document.getElementById('resultsTitle').textContent = t;
+  document.getElementById('resultsSub').textContent = s;
+}
+
+function restartQuiz() {
+  document.getElementById('emailInput').value = '';
+  document.getElementById('emailInput').style.borderColor = '';
+  showScreen('screen-email');
+}
+</script>
+</body>
+</html>
